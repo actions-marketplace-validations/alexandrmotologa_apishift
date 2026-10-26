@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "serve": "tsx src/cli.ts serve --port 9220",
+    "postinstall": "node -e \"const fs = require('fs'); const stub = 'fixtures/sample_openai_project/stubs/openai'; const dest = 'fixtures/sample_openai_project/node_modules/openai'; if (fs.existsSync(stub) && !fs.existsSync(dest)) { fs.mkdirSync('fixtures/sample_openai_project/node_modules', { recursive: true }); fs.cpSync(stub, dest, { recursive: true }); }\"",
     "build:all": "npm run build && cd web && npm run build"
   },
   "dependencies": {

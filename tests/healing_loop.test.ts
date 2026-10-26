@@ -19,8 +19,12 @@ describe('MigrationAgent Healing Loop', () => {
     if (fs.existsSync(path.join(fixtureRoot, 'stubs'))) {
       fs.cpSync(path.join(fixtureRoot, 'stubs'), path.join(tempDir, 'stubs'), { recursive: true });
     }
-    if (fs.existsSync(path.join(fixtureRoot, 'node_modules'))) {
-      fs.cpSync(path.join(fixtureRoot, 'node_modules'), path.join(tempDir, 'node_modules'), { recursive: true });
+
+    // Set up local stub in node_modules so require('openai') works in isolated test environments without network
+    const tempNodeModules = path.join(tempDir, 'node_modules');
+    fs.mkdirSync(tempNodeModules, { recursive: true });
+    if (fs.existsSync(path.join(tempDir, 'stubs/openai'))) {
+      fs.cpSync(path.join(tempDir, 'stubs/openai'), path.join(tempNodeModules, 'openai'), { recursive: true });
     }
 
     // Write unmigrated source code
