@@ -116,7 +116,7 @@ Open `http://localhost:9220` in your browser.
 
 ## GitHub Action integration
 
-You can run APIShift directly in GitHub Actions pipelines using `alexandrmotologa/apishift@main`:
+You can run APIShift directly in GitHub Actions pipelines using `alexandrmotologa/apishift@v1`:
 
 ```yaml
 name: API Migration & Verification
@@ -136,13 +136,24 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run APIShift
-        uses: alexandrmotologa/apishift@main
+        uses: alexandrmotologa/apishift@v1
         with:
           recipe: ${{ github.event.inputs.recipe }}
           test-command: 'npm test'
           auto-pr: 'true'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+### Action inputs
+
+| Input | Description | Required | Default |
+| :--- | :--- | :--- | :--- |
+| `recipe` | Migration recipe ID (e.g. `openai-v0-to-v1`, `stripe-v12-to-v14`) or path to custom recipe JSON | Yes | &mdash; |
+| `repo-path` | Target repository path to scan and migrate | No | `.` |
+| `test-command` | Test suite command to execute inside sandbox | No | `npm test` |
+| `sandbox-mode` | Sandbox runner mode (`auto`, `docker`, or `local`) | No | `auto` |
+| `auto-pr` | Automatically create a branch, commit, and open a verified GitHub PR | No | `false` |
+| `github-token` | GitHub token for opening pull requests (`contents:write`, `pull-requests:write`) | No | `${{ github.token }}` |
 
 ---
 

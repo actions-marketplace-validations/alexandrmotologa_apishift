@@ -1,13 +1,17 @@
 name: 'APIShift API Auto-Migrator'
-description: 'Autonomous API migration and breaking change healing engine. Scans codebase ASTs, transforms callsites, and heals test regressions in sandboxes.'
+description: 'Autonomous API migration engine that transforms ASTs, heals test regressions, and opens verified GitHub PRs.'
 author: 'Alexandr Motologa'
+
+branding:
+  icon: 'refresh-cw'
+  color: 'blue'
 
 inputs:
   recipe:
     description: 'Migration recipe ID (e.g. openai-v0-to-v1, stripe-v12-to-v14) or path to recipe JSON'
     required: true
   repo-path:
-    description: 'Target repository path'
+    description: 'Target repository path to scan and migrate'
     required: false
     default: '.'
   test-command:
@@ -23,22 +27,32 @@ inputs:
     required: false
     default: 'false'
   github-token:
-    description: 'GitHub token for opening pull requests'
+    description: 'GitHub token with contents:write and pull-requests:write permissions'
     required: false
     default: ${{ github.token }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Set up Node.js
+    - name: Set up Node.js 22
       uses: actions/setup-node@v4
       with:
         node-version: 22
 
-    - name: Run APIShift Migration
+    - name: Install Action Engine Dependencies
       shell: bash
       run: |
-        npx apishift migrate \
+        cd "${{ github.action_path }}"
+        npm ci
+        npm run build
+
+    - name: Run APIShift Migration Engine
+      id: migrate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        node "${{ github.action_path }}/dist/cli.js" migrate \
           --repo "${{ inputs.repo-path }}" \
           --recipe "${{ inputs.recipe }}" \
           --test-cmd "${{ inputs.test-command }}" \
