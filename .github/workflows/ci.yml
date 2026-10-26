@@ -22,6 +22,11 @@ jobs:
       - name: Install Root Dependencies
         run: npm ci
 
+      - name: Install Web Studio Dependencies
+        run: |
+          cd web
+          npm ci
+
       - name: Run Test Suite
         run: npm test
 

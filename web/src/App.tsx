@@ -58,7 +58,7 @@ export function App() {
   }, [events]);
 
   const toggleFileSelection = (filePath: string) => {
-    setSelectedFilePaths((prev) => {
+    setSelectedFilePaths((prev: Set<string>) => {
       const next = new Set(prev);
       if (next.has(filePath)) {
         next.delete(filePath);
