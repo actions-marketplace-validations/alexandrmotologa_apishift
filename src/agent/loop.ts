@@ -3,6 +3,10 @@ import path from 'node:path';
 import { CallGraph, RepositoryScanSummary } from '../scanner/call_graph.js';
 import { AstMutator, MutateFileResult } from '../synthesizer/ast_mutator.js';
 import { PatchGenerator, RepositoryPatchSummary } from '../synthesizer/patch_generator.js';
+import { ManifestUpdater, ManifestUpdateResult } from '../synthesizer/manifest_updater.js';
+import { SnapshotEngine } from './snapshot.js';
+import { ReportGenerator } from '../git/report_generator.js';
+import { PythonScanner } from '../scanner/python_scanner.js';
 import { RunnerFactory } from '../sandbox/runner_factory.js';
 import { ErrorParser } from '../sandbox/error_parser.js';
 import { AgentMemory } from './memory.js';
@@ -16,11 +20,15 @@ export interface MigrationOptions {
   sandboxMode?: SandboxMode;
   maxIterations?: number;
   dryRun?: boolean;
+  selectedFiles?: string[];
+  autoUpgradeManifest?: boolean;
+  rollbackOnFailure?: boolean;
+  generateReport?: boolean;
   onEvent?: (event: MigrationEvent) => void;
 }
 
 export interface MigrationEvent {
-  step: 'INITIALIZING' | 'SCANNING' | 'SYNTHESIZING' | 'TESTING' | 'HEALING' | 'PASSED' | 'FAILED';
+  step: 'INITIALIZING' | 'SCANNING' | 'SYNTHESIZING' | 'TESTING' | 'HEALING' | 'PASSED' | 'FAILED' | 'ROLLBACK';
   iteration: number;
   message: string;
   data?: any;
@@ -32,12 +40,17 @@ export interface MigrationRunResult {
   initialScan: RepositoryScanSummary;
   mutatedFiles: string[];
   patchSummary: RepositoryPatchSummary;
+  manifestResult?: ManifestUpdateResult;
+  snapshotId?: string;
+  reportPath?: string;
   finalTestResult?: TestExecutionResult;
   errorReport?: ErrorReport;
   healingLog: string[];
 }
 
 export class MigrationAgent {
+  public static snapshotEngine = new SnapshotEngine();
+
   public static async run(options: MigrationOptions): Promise<MigrationRunResult> {
     const {
       repoPath,
@@ -46,6 +59,10 @@ export class MigrationAgent {
       sandboxMode = 'auto',
       maxIterations = 5,
       dryRun = false,
+      selectedFiles,
+      autoUpgradeManifest = true,
+      rollbackOnFailure = false,
+      generateReport = true,
       onEvent = () => {},
     } = options;
 
@@ -64,17 +81,24 @@ export class MigrationAgent {
 
     emit('INITIALIZING', 0, `Starting migration for ${recipe.name} in ${absRepoPath}`);
 
-    // Step 1: Scan repository
+    // Step 1: Scan repository (TS/JS and Python)
     emit('SCANNING', 0, `Scanning AST for ${recipe.packageName} callsites...`);
     const scanSummary = CallGraph.scanRepository(absRepoPath, recipe);
+    const pyResults = PythonScanner.scanRepository(absRepoPath, recipe);
+
+    let totalCalls = scanSummary.totalCallsitesCount;
+    for (const py of pyResults) {
+      totalCalls += py.callsites.length;
+    }
+
     emit(
       'SCANNING',
       0,
-      `Found ${scanSummary.totalCallsitesCount} callsites across ${scanSummary.affectedFilesCount} files.`,
-      scanSummary
+      `Found ${totalCalls} callsites across ${scanSummary.affectedFilesCount + pyResults.length} files.`,
+      { scanSummary, pyResults }
     );
 
-    if (scanSummary.affectedFilesCount === 0) {
+    if (scanSummary.affectedFilesCount === 0 && pyResults.length === 0) {
       emit('PASSED', 0, 'No callsites matching recipe found in target repository.');
       return {
         success: true,
@@ -92,12 +116,51 @@ export class MigrationAgent {
       };
     }
 
-    // Step 2: Synthesize initial patches
+    // Step 2: Create pre-mutation snapshot for instant rollback protection
+    const filesToTouch: string[] = [];
+    for (const fr of scanSummary.fileResults) {
+      if (!selectedFiles || selectedFiles.includes(fr.filePath)) {
+        filesToTouch.push(fr.filePath);
+      }
+    }
+    for (const py of pyResults) {
+      if (!selectedFiles || selectedFiles.includes(py.filePath)) {
+        filesToTouch.push(py.filePath);
+      }
+    }
+
+    // Include manifest in snapshot if present
+    const pkgJson = path.join(absRepoPath, 'package.json');
+    if (fs.existsSync(pkgJson)) filesToTouch.push(pkgJson);
+    const reqTxt = path.join(absRepoPath, 'requirements.txt');
+    if (fs.existsSync(reqTxt)) filesToTouch.push(reqTxt);
+
+    const snapshot = this.snapshotEngine.createSnapshot(absRepoPath, filesToTouch);
+
+    // Step 3: Auto-upgrade package manifest if requested
+    let manifestResult: ManifestUpdateResult | undefined;
+    if (autoUpgradeManifest && !dryRun) {
+      manifestResult = ManifestUpdater.updateProjectManifest(absRepoPath, recipe);
+      if (manifestResult.updated) {
+        emit(
+          'SYNTHESIZING',
+          0,
+          `Auto-upgraded ${manifestResult.manifestType}: ${recipe.packageName} from ${manifestResult.oldVersion} to ${manifestResult.newVersion}`
+        );
+        healingLog.push(`Upgraded manifest ${manifestResult.manifestType} to ${manifestResult.newVersion}`);
+      }
+    }
+
+    // Step 4: Synthesize initial AST patches
     emit('SYNTHESIZING', 0, `Synthesizing style-preserving AST transformations...`);
     const mutations: MutateFileResult[] = [];
     const originalFileContents = new Map<string, string>();
 
+    // Mutate TS/JS files
     for (const fileResult of scanSummary.fileResults) {
+      if (selectedFiles && !selectedFiles.includes(fileResult.filePath)) {
+        continue;
+      }
       const orig = fs.readFileSync(fileResult.filePath, 'utf8');
       originalFileContents.set(fileResult.filePath, orig);
 
@@ -106,6 +169,29 @@ export class MigrationAgent {
 
       if (mutated.hasChanges && !dryRun) {
         fs.writeFileSync(fileResult.filePath, mutated.modifiedCode, 'utf8');
+      }
+    }
+
+    // Mutate Python files
+    for (const pyResult of pyResults) {
+      if (selectedFiles && !selectedFiles.includes(pyResult.filePath)) {
+        continue;
+      }
+      const orig = fs.readFileSync(pyResult.filePath, 'utf8');
+      originalFileContents.set(pyResult.filePath, orig);
+
+      const pyMut = PythonScanner.mutateFile(pyResult.filePath, orig, recipe);
+      mutations.push({
+        filePath: pyResult.filePath,
+        originalCode: orig,
+        modifiedCode: pyMut.modifiedCode,
+        hasChanges: pyMut.hasChanges,
+        appliedCount: pyMut.appliedCount,
+        appliedTransformations: ['PYTHON_METHOD_RENAME'],
+      });
+
+      if (pyMut.hasChanges && !dryRun) {
+        fs.writeFileSync(pyResult.filePath, pyMut.modifiedCode, 'utf8');
       }
     }
 
@@ -127,11 +213,12 @@ export class MigrationAgent {
         initialScan: scanSummary,
         mutatedFiles,
         patchSummary,
+        snapshotId: snapshot.id,
         healingLog: ['Dry run finished.'],
       };
     }
 
-    // Step 3: Sandboxed Test-Driven Healing Loop
+    // Step 5: Sandboxed Test-Driven Healing Loop
     let iteration = 0;
     let testsPassed = false;
     let lastTestResult: TestExecutionResult | undefined;
@@ -204,7 +291,6 @@ export class MigrationAgent {
         }
 
         // Targeted Heal 1: response.data property access error
-        // e.g. "Property 'data' does not exist" or "Cannot read properties of undefined (reading 'choices')"
         if (
           err.message.includes("'data'") ||
           err.message.includes("reading 'choices'") ||
@@ -256,18 +342,27 @@ export class MigrationAgent {
       }
     }
 
+    // Step 6: Rollback on failure if configured
+    if (!testsPassed && rollbackOnFailure) {
+      emit('ROLLBACK', iteration, `Migration did not reach green tests. Rolling back all files to pre-mutation snapshot...`);
+      this.snapshotEngine.rollback(snapshot.id);
+      healingLog.push('Automatic rollback executed due to unhealed test regressions.');
+    }
+
     // Recompute final patch summary
     const finalMutations: MutateFileResult[] = [];
     for (const [filePath, orig] of originalFileContents.entries()) {
-      const currentCode = fs.readFileSync(filePath, 'utf8');
-      finalMutations.push({
-        filePath,
-        originalCode: orig,
-        modifiedCode: currentCode,
-        hasChanges: orig !== currentCode,
-        appliedCount: 1,
-        appliedTransformations: ['HEALED'],
-      });
+      if (fs.existsSync(filePath)) {
+        const currentCode = fs.readFileSync(filePath, 'utf8');
+        finalMutations.push({
+          filePath,
+          originalCode: orig,
+          modifiedCode: currentCode,
+          hasChanges: orig !== currentCode,
+          appliedCount: 1,
+          appliedTransformations: ['HEALED'],
+        });
+      }
     }
     patchSummary = PatchGenerator.generateRepositoryPatch(finalMutations);
 
@@ -280,15 +375,34 @@ export class MigrationAgent {
       );
     }
 
-    return {
+    const finalResult: MigrationRunResult = {
       success: testsPassed,
       totalIterations: iteration,
       initialScan: scanSummary,
       mutatedFiles,
       patchSummary,
+      manifestResult,
+      snapshotId: snapshot.id,
       finalTestResult: lastTestResult,
       errorReport: lastErrorReport,
       healingLog,
     };
+
+    // Step 7: Generate audit report file
+    if (generateReport && !dryRun) {
+      try {
+        const reportPath = ReportGenerator.saveReport(absRepoPath, {
+          repoPath: absRepoPath,
+          recipe,
+          result: finalResult,
+        });
+        finalResult.reportPath = reportPath;
+        emit('PASSED', iteration, `Generated audit report at: ${path.basename(reportPath)}`);
+      } catch {
+        // ignore report write error
+      }
+    }
+
+    return finalResult;
   }
 }

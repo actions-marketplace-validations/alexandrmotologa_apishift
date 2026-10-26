@@ -124,6 +124,10 @@ export class ApiServer {
           sandboxMode?: SandboxMode;
           dryRun?: boolean;
           maxIterations?: number;
+          selectedFiles?: string[];
+          autoUpgradeManifest?: boolean;
+          rollbackOnFailure?: boolean;
+          generateReport?: boolean;
         };
 
         const recipe = SpecIngestor.loadRecipe(body.recipeIdOrPath);
@@ -135,6 +139,10 @@ export class ApiServer {
           sandboxMode: body.sandboxMode || 'auto',
           dryRun: body.dryRun ?? false,
           maxIterations: body.maxIterations || 5,
+          selectedFiles: body.selectedFiles,
+          autoUpgradeManifest: body.autoUpgradeManifest ?? true,
+          rollbackOnFailure: body.rollbackOnFailure ?? false,
+          generateReport: body.generateReport ?? true,
           onEvent: (event) => {
             SseManager.broadcast('migration-event', event);
           },
@@ -145,6 +153,49 @@ export class ApiServer {
       } catch (err: any) {
         return reply.status(500).send({ error: err.message });
       }
+    });
+
+    // Rollback changes
+    this.app.post('/api/rollback', async (request, reply) => {
+      try {
+        const body = (request.body as { snapshotId?: string }) || {};
+        let rollbackRes;
+        if (body.snapshotId) {
+          rollbackRes = MigrationAgent.snapshotEngine.rollback(body.snapshotId);
+        } else {
+          rollbackRes = MigrationAgent.snapshotEngine.rollbackLatest();
+        }
+
+        if (!rollbackRes) {
+          return reply.status(400).send({ error: 'No snapshots available to rollback.' });
+        }
+
+        return {
+          success: true,
+          restoredCount: rollbackRes.restoredCount,
+          deletedCount: rollbackRes.deletedCount,
+        };
+      } catch (err: any) {
+        return reply.status(500).send({ error: err.message });
+      }
+    });
+
+    // Get latest migration report
+    this.app.get('/api/report', async (request, reply) => {
+      if (!this.latestResult || !this.latestResult.result) {
+        return reply.status(404).send({ error: 'No migration report available.' });
+      }
+
+      const { recipe, result, repoPath } = this.latestResult;
+      const { ReportGenerator } = await import('../git/report_generator.js');
+      const markdown = ReportGenerator.generateMarkdown({ repoPath, recipe, result });
+      const html = ReportGenerator.generateHtml({ repoPath, recipe, result });
+
+      return {
+        markdown,
+        html,
+        success: result.success,
+      };
     });
 
     // Create GitHub PR

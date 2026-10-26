@@ -118,6 +118,9 @@ program
   .option('--dry-run', 'Preview AST changes without writing to disk', false)
   .option('--auto-pr', 'Automatically create git branch, commit, and open PR', false)
   .option('--max-iter <num>', 'Maximum self-healing iterations', '5')
+  .option('--rollback-on-failure', 'Revert all files if test suite fails to heal', false)
+  .option('--no-manifest-upgrade', 'Do not auto-upgrade package.json or requirements.txt')
+  .option('--no-report', 'Do not generate APISHIFT_MIGRATION_REPORT.md')
   .action(async (options) => {
     try {
       const repoPath = path.resolve(options.repo);
@@ -130,7 +133,8 @@ program
       console.log(`Recipe:        ${pc.bold(recipe.name)}`);
       console.log(`Sandbox Mode:  ${sandboxMode}`);
       console.log(`Test Command:  ${options.testCmd}`);
-      console.log(`Max Iterations:${maxIterations}\n`);
+      console.log(`Max Iterations:${maxIterations}`);
+      console.log(`Auto Rollback: ${options.rollbackOnFailure ? 'Enabled' : 'Disabled'}\n`);
 
       const result = await MigrationAgent.run({
         repoPath,
@@ -139,6 +143,9 @@ program
         testCommand: options.testCmd,
         dryRun: options.dryRun,
         maxIterations,
+        autoUpgradeManifest: options.manifestUpgrade,
+        rollbackOnFailure: options.rollbackOnFailure,
+        generateReport: options.report,
         onEvent: (e) => {
           const iterStr = e.iteration > 0 ? `[iter ${e.iteration}] ` : '';
           const tag = pc.bold(`[${e.step}]`);
@@ -152,6 +159,9 @@ program
       console.log(`  Files modified:       ${result.patchSummary.totalFilesChanged}`);
       console.log(`  Total additions:      ${pc.green(`+${result.patchSummary.totalAdditions}`)}`);
       console.log(`  Total deletions:      ${pc.red(`-${result.patchSummary.totalDeletions}`)}`);
+      if (result.reportPath) {
+        console.log(`  Audit Report:         ${pc.cyan(result.reportPath)}`);
+      }
 
       if (options.autoPr && result.success && !options.dryRun) {
         console.log(pc.bold(pc.cyan('\nOpening GitHub Pull Request...')));
@@ -190,7 +200,25 @@ program
     }
   });
 
-// 5. Serve Command (Web Studio)
+// 5. Rollback Command
+program
+  .command('rollback')
+  .description('Rollback modified files to the latest pre-migration snapshot')
+  .action(() => {
+    try {
+      const res = MigrationAgent.snapshotEngine.rollbackLatest();
+      if (!res) {
+        console.log(pc.yellow('No active snapshots found in memory. Use git checkout to revert git-tracked files.'));
+        return;
+      }
+      console.log(pc.green(`Successfully restored ${res.restoredCount} file(s).`));
+    } catch (err: any) {
+      console.error(pc.red(`Rollback failed: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+// 6. Serve Command (Web Studio)
 program
   .command('serve')
   .description('Start the Fastify API server and React 19 Web Studio')

@@ -11,9 +11,15 @@ export interface FileDiffItem {
 
 interface DiffViewerProps {
   files: FileDiffItem[];
+  selectedFilePaths?: Set<string>;
+  onToggleFile?: (filePath: string) => void;
 }
 
-export const DiffViewer: React.FC<DiffViewerProps> = ({ files }) => {
+export const DiffViewer: React.FC<DiffViewerProps> = ({
+  files,
+  selectedFilePaths,
+  onToggleFile,
+}) => {
   const [selectedFileIdx, setSelectedFileIdx] = useState<number>(0);
 
   if (files.length === 0) {
@@ -58,32 +64,54 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ files }) => {
         {files.map((f, idx) => {
           const isSelected = idx === selectedFileIdx;
           const fileName = f.filePath.split(/[\\/]/).pop();
+          const isIncluded = selectedFilePaths ? selectedFilePaths.has(f.filePath) : true;
+
           return (
-            <button
+            <div
               key={f.filePath}
-              onClick={() => setSelectedFileIdx(idx)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.75rem',
+                gap: '0.3rem',
+                padding: '0.2rem 0.5rem',
                 borderRadius: '0.375rem',
                 backgroundColor: isSelected ? '#1e293b' : 'transparent',
                 border: isSelected ? '1px solid #334155' : '1px solid transparent',
-                color: isSelected ? '#f8fafc' : '#94a3b8',
-                fontSize: '0.8rem',
-                fontFamily: 'monospace',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
               }}
             >
-              <FileCode size={13} style={{ color: isSelected ? '#60a5fa' : '#64748b' }} />
-              <span>{fileName}</span>
-              <span style={{ display: 'flex', gap: '0.2rem', fontSize: '0.7rem' }}>
-                <span style={{ color: '#34d399' }}>+{f.additions}</span>
-                <span style={{ color: '#f87171' }}>-{f.deletions}</span>
-              </span>
-            </button>
+              {onToggleFile && (
+                <input
+                  type="checkbox"
+                  checked={isIncluded}
+                  onChange={() => onToggleFile(f.filePath)}
+                  title="Include in migration"
+                  style={{ cursor: 'pointer' }}
+                />
+              )}
+              <button
+                onClick={() => setSelectedFileIdx(idx)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.2rem 0.4rem',
+                  background: 'none',
+                  border: 'none',
+                  color: isSelected ? '#f8fafc' : '#94a3b8',
+                  fontSize: '0.8rem',
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <FileCode size={13} style={{ color: isSelected ? '#60a5fa' : '#64748b' }} />
+                <span style={{ opacity: isIncluded ? 1 : 0.5 }}>{fileName}</span>
+                <span style={{ display: 'flex', gap: '0.2rem', fontSize: '0.7rem' }}>
+                  <span style={{ color: '#34d399' }}>+{f.additions}</span>
+                  <span style={{ color: '#f87171' }}>-{f.deletions}</span>
+                </span>
+              </button>
+            </div>
           );
         })}
       </div>

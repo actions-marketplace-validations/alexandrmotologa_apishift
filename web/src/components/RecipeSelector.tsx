@@ -23,8 +23,13 @@ interface RecipeSelectorProps {
   setSandboxMode: (mode: 'auto' | 'docker' | 'local') => void;
   dryRun: boolean;
   setDryRun: (dry: boolean) => void;
+  autoUpgradeManifest: boolean;
+  setAutoUpgradeManifest: (up: boolean) => void;
+  rollbackOnFailure: boolean;
+  setRollbackOnFailure: (rb: boolean) => void;
   onScan: () => void;
   onMigrate: () => void;
+  onRollback: () => void;
   isLoading: boolean;
 }
 
@@ -40,8 +45,13 @@ export const RecipeSelector: React.FC<RecipeSelectorProps> = ({
   setSandboxMode,
   dryRun,
   setDryRun,
+  autoUpgradeManifest,
+  setAutoUpgradeManifest,
+  rollbackOnFailure,
+  setRollbackOnFailure,
   onScan,
   onMigrate,
+  onRollback,
   isLoading,
 }) => {
   const currentRecipe = recipes.find((r) => r.id === selectedRecipeId);
@@ -160,6 +170,28 @@ export const RecipeSelector: React.FC<RecipeSelectorProps> = ({
             <Play size={14} />
             Migrate & Heal
           </button>
+
+          <button
+            onClick={onRollback}
+            disabled={isLoading}
+            title="Rollback latest modified files to pre-migration snapshot"
+            style={{
+              backgroundColor: '#1e293b',
+              border: '1px solid #475569',
+              borderRadius: '0.375rem',
+              color: '#f87171',
+              padding: '0.5rem 0.6rem',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.2rem',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Revert
+          </button>
         </div>
       </div>
 
@@ -222,11 +254,31 @@ export const RecipeSelector: React.FC<RecipeSelectorProps> = ({
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
             <input
               type="checkbox"
+              checked={autoUpgradeManifest}
+              onChange={(e) => setAutoUpgradeManifest(e.target.checked)}
+              disabled={isLoading}
+            />
+            <span>Auto-update package.json</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={rollbackOnFailure}
+              onChange={(e) => setRollbackOnFailure(e.target.checked)}
+              disabled={isLoading}
+            />
+            <span>Rollback on failure</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
               checked={dryRun}
               onChange={(e) => setDryRun(e.target.checked)}
               disabled={isLoading}
             />
-            <span>Dry Run (No file writes)</span>
+            <span>Dry Run</span>
           </label>
         </div>
 

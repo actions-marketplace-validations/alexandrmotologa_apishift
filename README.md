@@ -12,11 +12,13 @@ Software teams frequently postpone major SDK upgrades because manual refactoring
 
 APIShift automates the complete upgrade lifecycle:
 1. **Migration recipe ingestion**: loads declarative migration recipes (OpenAI v0.28 to v1.0, Stripe v12 to v14, Supabase v1 to v2, Next.js Pages to App Router) or computes OpenAPI diffs between two versions.
-2. **AST codebase scanner**: walks TypeScript and JavaScript ASTs using Babel and Recast, mapping every import statement, class instantiation, method call, and parameter dictionary.
+2. **AST codebase scanner**: walks TypeScript, JavaScript, and Python ASTs using Babel and Recast, mapping every import statement, class instantiation, method call, and parameter dictionary.
 3. **Semantic patch synthesizer**: performs style-preserving AST mutations, retaining existing user comments, indentation, and structure.
-4. **Sandboxed test-driven healing loop**: executes the repository test suite in an isolated sandbox (Docker container when available, or an isolated process runner). Parses compiler errors and assertion failures, applying iterative repairs until all tests turn green.
-5. **Pull request publisher**: creates dedicated migration branches, writes conventional git commits, and opens verified GitHub pull requests with diff breakdowns and test execution proofs.
-6. **Web review studio**: React 19 interface displaying live migration progress, side-by-side file diffs, test logs, and recipe editors.
+4. **Manifest auto-upgrade**: automatically detects and upgrades dependency constraints in `package.json`, `requirements.txt`, or `pyproject.toml`.
+5. **Sandboxed test-driven healing loop**: executes the repository test suite in an isolated sandbox (Docker container when available, or an isolated process runner). Parses compiler errors and assertion failures, applying iterative repairs until all tests turn green.
+6. **Snapshotting & instant rollback**: takes atomic pre-migration snapshots of affected files, offering safe rollbacks if regressions cannot be healed.
+7. **Selective cherry-pick & visual recipe builder**: interactive Web Studio interface with live playgrounds, file selection checkboxes, and OpenAPI diffing.
+8. **Pull request publisher & audit reports**: creates dedicated migration branches, writes conventional git commits, generates `APISHIFT_MIGRATION_REPORT.md`, and opens verified GitHub pull requests.
 
 ---
 
@@ -60,31 +62,72 @@ node dist/cli.js scan --repo ./my-project --recipe openai-v0-to-v1
 ```
 
 ### 3. Run migration with test healing
-Applies AST transformations and verifies against your project test suite:
+Applies AST transformations, auto-updates manifests, and verifies against your project test suite:
 ```bash
 node dist/cli.js migrate --repo ./my-project --recipe openai-v0-to-v1 --test-cmd "npm test"
 ```
 
-Options:
+Advanced migration flags:
 - `--sandbox <mode>`: sandbox runner mode (`auto`, `docker`, or `local`, default: `auto`).
-- `--test-cmd <cmd>`: test command to run (e.g., `npm test`, `npx vitest run`, `node --test`).
+- `--test-cmd <cmd>`: test command to execute (e.g., `npm test`, `npx vitest run`, `node --test`, `pytest`).
+- `--rollback-on-failure`: automatically reverts all modified files if tests fail to heal.
+- `--no-manifest-upgrade`: prevents updating `package.json` or `requirements.txt`.
+- `--no-report`: skips generating `APISHIFT_MIGRATION_REPORT.md`.
 - `--dry-run`: previews changes without writing files to disk.
 - `--auto-pr`: creates a git branch, commits changes, and opens a GitHub pull request.
 - `--max-iter <num>`: maximum self-healing iterations (default: 5).
 
-### 4. Diff two OpenAPI specifications
+### 4. Rollback to latest snapshot
+Restores all modified files to their clean pre-migration state:
+```bash
+node dist/cli.js rollback
+```
+
+### 5. Diff two OpenAPI specifications
 Compares two OpenAPI JSON/YAML specifications and generates an automated migration recipe:
 ```bash
 node dist/cli.js diff --spec-old ./spec-v1.json --spec-new ./spec-v2.json --out ./custom-recipe.json
 ```
 
-### 5. Start the web review studio
+### 6. Start the web review studio
 Launches the Fastify API server and React 19 web studio on port 9220:
 ```bash
 node dist/cli.js serve --port 9220
 ```
 
 Open `http://localhost:9220` in your browser.
+
+---
+
+## GitHub Action integration
+
+You can run APIShift directly in GitHub Actions pipelines using `alexandrmotologa/apishift@main`:
+
+```yaml
+name: API Migration & Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: 'Migration recipe ID'
+        required: true
+        default: 'openai-v0-to-v1'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run APIShift
+        uses: alexandrmotologa/apishift@main
+        with:
+          recipe: ${{ github.event.inputs.recipe }}
+          test-command: 'npm test'
+          auto-pr: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
 
 ---
 
@@ -105,15 +148,16 @@ Open `http://localhost:9220` in your browser.
 apishift/
 ├── src/
 │   ├── spec/            # Recipe parser and OpenAPI differ
-│   ├── scanner/         # Babel / Recast AST visitor and import resolver
-│   ├── synthesizer/     # Style-preserving AST mutator and patch generator
+│   ├── scanner/         # Babel / Recast AST visitor, Python scanner, and import resolver
+│   ├── synthesizer/     # Style-preserving AST mutator, manifest updater, and patch generator
 │   ├── sandbox/         # Dockerode runner and local process sandbox
-│   ├── agent/           # Test-driven self-healing loop and memory
-│   ├── git/             # Branch manager and GitHub PR publisher
+│   ├── agent/           # Test-driven self-healing loop, snapshot engine, and LLM fallback
+│   ├── git/             # Branch manager, report generator, and GitHub PR publisher
 │   ├── server/          # Fastify backend and Server-Sent Events stream
 │   └── cli.ts           # Commander CLI entrypoint
 ├── web/                 # React 19 web review studio (Vite, TypeScript, CSS)
 ├── fixtures/            # Real sample project fixtures for verification
+├── action.yml           # Reusable GitHub Action specification
 └── tests/               # Vitest unit and integration test suite
 ```
 
@@ -129,14 +173,18 @@ npm test
 Expected output:
 ```text
  ✓ tests/error_parser.test.ts (2 tests)
+ ✓ tests/manifest_updater.test.ts (2 tests)
  ✓ tests/openapi_differ.test.ts (1 test)
  ✓ tests/spec_ingestor.test.ts (3 tests)
+ ✓ tests/report_generator.test.ts (1 test)
+ ✓ tests/snapshot.test.ts (1 test)
+ ✓ tests/python_scanner.test.ts (1 test)
  ✓ tests/ast_walker.test.ts (1 test)
  ✓ tests/ast_mutator.test.ts (1 test)
  ✓ tests/healing_loop.test.ts (1 test)
 
- Test Files  6 passed (6)
-      Tests  9 passed (9)
+ Test Files  10 passed (10)
+      Tests  14 passed (14)
 ```
 
 ---

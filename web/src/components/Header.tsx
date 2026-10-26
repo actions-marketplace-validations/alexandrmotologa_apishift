@@ -1,9 +1,9 @@
 import React from 'react';
-import { RefreshCw, Terminal, GitPullRequest, Layers, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Terminal, GitPullRequest, Layers, CheckCircle2, AlertCircle, Wrench, FileText } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'studio' | 'recipes' | 'differ' | 'pr';
-  setActiveTab: (tab: 'studio' | 'recipes' | 'differ' | 'pr') => void;
+  activeTab: 'studio' | 'recipes' | 'builder' | 'differ' | 'report' | 'pr';
+  setActiveTab: (tab: 'studio' | 'recipes' | 'builder' | 'differ' | 'report' | 'pr') => void;
   isConnected: boolean;
 }
 
@@ -65,6 +65,26 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isConne
           </button>
 
           <button
+            onClick={() => setActiveTab('builder')}
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              backgroundColor: activeTab === 'builder' ? '#1e293b' : 'transparent',
+              color: activeTab === 'builder' ? '#60a5fa' : '#94a3b8',
+              border: activeTab === 'builder' ? '1px solid #3b82f6' : '1px solid transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            <Wrench size={15} />
+            Recipe Builder
+          </button>
+
+          <button
             onClick={() => setActiveTab('recipes')}
             style={{
               padding: '0.4rem 0.8rem',
@@ -102,6 +122,26 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isConne
           >
             <RefreshCw size={15} />
             OpenAPI Differ
+          </button>
+
+          <button
+            onClick={() => setActiveTab('report')}
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              backgroundColor: activeTab === 'report' ? '#1e293b' : 'transparent',
+              color: activeTab === 'report' ? '#60a5fa' : '#94a3b8',
+              border: activeTab === 'report' ? '1px solid #3b82f6' : '1px solid transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            <FileText size={15} />
+            Audit Report
           </button>
 
           <button

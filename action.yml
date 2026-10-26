@@ -1,0 +1,46 @@
+name: 'APIShift API Auto-Migrator'
+description: 'Autonomous API migration and breaking change healing engine. Scans codebase ASTs, transforms callsites, and heals test regressions in sandboxes.'
+author: 'Alexandr Motologa'
+
+inputs:
+  recipe:
+    description: 'Migration recipe ID (e.g. openai-v0-to-v1, stripe-v12-to-v14) or path to recipe JSON'
+    required: true
+  repo-path:
+    description: 'Target repository path'
+    required: false
+    default: '.'
+  test-command:
+    description: 'Test suite command to execute inside sandbox'
+    required: false
+    default: 'npm test'
+  sandbox-mode:
+    description: 'Sandbox runner mode: docker, local, or auto'
+    required: false
+    default: 'auto'
+  auto-pr:
+    description: 'Automatically create a branch and open a verified GitHub Pull Request'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'GitHub token for opening pull requests'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Run APIShift Migration
+      shell: bash
+      run: |
+        npx apishift migrate \
+          --repo "${{ inputs.repo-path }}" \
+          --recipe "${{ inputs.recipe }}" \
+          --test-cmd "${{ inputs.test-command }}" \
+          --sandbox "${{ inputs.sandbox-mode }}" \
+          ${{ inputs.auto-pr == 'true' && '--auto-pr' || '' }}
