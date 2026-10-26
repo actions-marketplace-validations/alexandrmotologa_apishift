@@ -1,4 +1,19 @@
-# APIShift
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="APIShift Logo" width="130" style="border-radius: 24px;" />
+</p>
+
+<h1 align="center">APIShift</h1>
+
+<p align="center">
+  <strong>Autonomous API-to-Codebase Migration and Self-Healing AST Engine</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/alexandrmotologa/apishift/actions"><img src="https://img.shields.io/github/actions/workflow/status/alexandrmotologa/apishift/ci.yml?branch=main&label=CI&logo=github" alt="CI" /></a>
+  <a href="https://github.com/alexandrmotologa/apishift/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript" alt="TypeScript" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19.0-61dafb?logo=react" alt="React 19" /></a>
+</p>
 
 Autonomous API migration and breaking change healing engine. Ingests API breaking change specifications and SDK migration guides, scans repository Abstract Syntax Trees (ASTs), synthesizes type-safe code transformations, runs local test suites in isolated sandboxes, and iteratively heals regressions until 100% of tests pass.
 

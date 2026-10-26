@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Luxury Squircle Clip -->
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <!-- Electric Cyan Optic Gradients -->
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Amber Casque Horn Gradient -->
+    <linearGradient id="amber-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="60%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Eye Gradients canted upwards -->
+    <linearGradient id="eye-r" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+    <linearGradient id="eye-l" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="subtle-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#0f172a" flood-opacity="0.16" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="36" stroke-linejoin="round" />
+
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- 100% Watertight Solid Base Silhouette: Sharp Low-Poly Chameleon Crest -->
+      <path d="
+        M 0 -330
+        L 85 -345 L 140 -270 L 220 -200 L 255 -90 L 270 30 L 230 150 L 160 250 L 80 320 L 0 350
+        L -80 320 L -160 250 L -230 150 L -270 30 L -255 -90 L -220 -200 L -140 -270 L -85 -345
+        Z
+      " fill="#0b0f19" />
+
+      <!-- Casque Spines (Amber Top Accent Horns) -->
+      <polygon points="0,-330 85,-345 60,-270 0,-290" fill="url(#amber-accent)" />
+      <polygon points="0,-330 -85,-345 -60,-270 0,-290" fill="url(#amber-accent)" opacity="0.85" />
+      <polygon points="85,-345 140,-270 95,-220 60,-270" fill="#f59e0b" />
+      <polygon points="-85,-345 -140,-270 -95,-220 -60,-270" fill="#d97706" />
+
+      <!-- Upper Temporal Casque Plates -->
+      <polygon points="0,-290 60,-270 0,-180" fill="#475569" />
+      <polygon points="0,-290 -60,-270 0,-180" fill="#334155" />
+      <polygon points="60,-270 95,-220 70,-150 0,-180" fill="#64748b" />
+      <polygon points="-60,-270 -95,-220 -70,-150 0,-180" fill="#1e293b" />
+      <polygon points="95,-220 140,-270 220,-200 150,-130" fill="#334155" />
+      <polygon points="-95,-220 -140,-270 -220,-200 -150,-130" fill="#0f172a" />
+      <polygon points="95,-220 150,-130 70,-150" fill="#475569" />
+      <polygon points="-95,-220 -150,-130 -70,-150" fill="#162032" />
+
+      <!-- Flank Armor (Lateral Crest) -->
+      <polygon points="220,-200 255,-90 190,-60 150,-130" fill="#475569" />
+      <polygon points="-220,-200 -255,-90 -190,-60 -150,-130" fill="#1e293b" />
+      <polygon points="255,-90 270,30 200,40 190,-60" fill="#334155" />
+      <polygon points="-255,-90 -270,30 -200,40 -190,-60" fill="#0f172a" />
+      <polygon points="270,30 230,150 160,130 200,40" fill="#1e293b" />
+      <polygon points="-270,30 -230,150 -160,130 -200,40" fill="#0b0f19" />
+
+      <!-- Brow Ridge (Angular Aggressive Cant) -->
+      <polygon points="0,-180 70,-150 150,-130 110,-70 0,-90" fill="#94a3b8" />
+      <polygon points="0,-180 -70,-150 -150,-130 -110,-70 0,-90" fill="#475569" />
+      <polygon points="150,-130 190,-60 140,-40 110,-70" fill="#64748b" />
+      <polygon points="-150,-130 -190,-60 -140,-40 -110,-70" fill="#334155" />
+
+      <!-- Slanted Predatory Almond Eyes (Canted Upwards Toward Crest) -->
+      <polygon points="45,-65 125,-85 140,-40 60,-20" fill="url(#eye-r)" />
+      <polygon points="-45,-65 -125,-85 -140,-40 -60,-20" fill="url(#eye-l)" />
+
+      <!-- Slit Pupils with Specular Highlight -->
+      <polygon points="85,-80 95,-55 85,-30 75,-55" fill="#041527" />
+      <polygon points="-85,-80 -95,-55 -85,-30 -75,-55" fill="#041527" />
+      <polygon points="88,-62 92,-55 88,-48 84,-55" fill="#ffffff" opacity="0.95" />
+      <polygon points="-88,-62 -92,-55 -88,-48 -84,-55" fill="#ffffff" opacity="0.95" />
+
+      <!-- Nasal Bridge & Midline Spine -->
+      <polygon points="0,-90 45,-65 35,40 0,55" fill="#cbd5e1" />
+      <polygon points="0,-90 -45,-65 -35,40 0,55" fill="#64748b" />
+      <polygon points="45,-65 60,-20 90,40 35,40" fill="#94a3b8" />
+      <polygon points="-45,-65 -60,-20 -90,40 -35,40" fill="#475569" />
+      <polygon points="60,-20 140,-40 130,50 90,40" fill="#64748b" />
+      <polygon points="-60,-20 -140,-40 -130,50 -90,40" fill="#334155" />
+      <polygon points="140,-40 190,-60 200,40 130,50" fill="#334155" />
+      <polygon points="-140,-40 -190,-60 -200,40 -130,50" fill="#1e293b" />
+
+      <!-- Snout & Rostral Armor -->
+      <polygon points="0,55 35,40 30,160 0,180" fill="#94a3b8" />
+      <polygon points="0,55 -35,40 -30,160 0,180" fill="#475569" />
+      <polygon points="35,40 90,40 70,160 30,160" fill="#64748b" />
+      <polygon points="-35,40 -90,40 -70,160 -30,160" fill="#334155" />
+      <polygon points="90,40 130,50 140,150 70,160" fill="#475569" />
+      <polygon points="-90,40 -130,50 -140,150 -70,160" fill="#1e293b" />
+      <polygon points="130,50 200,40 160,130 140,150" fill="#334155" />
+      <polygon points="-130,50 -200,40 -160,130 -140,150" fill="#162032" />
+
+      <!-- Tapered Chin & Gular Ridge -->
+      <polygon points="0,180 30,160 25,260 0,280" fill="#64748b" />
+      <polygon points="0,180 -30,160 -25,260 0,280" fill="#334155" />
+      <polygon points="30,160 70,160 55,250 25,260" fill="#475569" />
+      <polygon points="-30,160 -70,160 -55,250 -25,260" fill="#1e293b" />
+      <polygon points="70,160 140,150 110,240 55,250" fill="#334155" />
+      <polygon points="-70,160 -140,150 -110,240 -55,250" fill="#162032" />
+      <polygon points="140,150 230,150 160,250 110,240" fill="#1e293b" />
+      <polygon points="-140,150 -230,150 -160,250 -110,240" fill="#0f172a" />
+
+      <!-- Cyan Gular Core Point -->
+      <polygon points="0,280 25,260 0,350" fill="url(#cyan-glow)" />
+      <polygon points="0,280 -25,260 0,350" fill="url(#cyan-glow)" opacity="0.75" />
+      <polygon points="25,260 55,250 80,320 0,350" fill="#1e293b" />
+      <polygon points="-25,260 -55,250 -80,320 0,350" fill="#0b0f19" />
+      <polygon points="55,250 110,240 160,250 80,320" fill="#334155" />
+      <polygon points="-55,250 -110,240 -160,250 -80,320" fill="#162032" />
+
+    </g>
+  </g>
+</svg>

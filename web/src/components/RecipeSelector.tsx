@@ -64,7 +64,7 @@ export const RecipeSelector: React.FC<RecipeSelectorProps> = ({
       padding: '1.25rem',
       marginBottom: '1.5rem',
     }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1fr', gap: '1rem', alignItems: 'flex-end' }}>
+      <div className="recipe-selector-grid">
         {/* Recipe Selection */}
         <div>
           <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
@@ -196,17 +196,11 @@ export const RecipeSelector: React.FC<RecipeSelectorProps> = ({
       </div>
 
       {/* Advanced Options Drawer */}
-      <div style={{
-        marginTop: '1rem',
-        paddingTop: '0.75rem',
-        borderTop: '1px solid #1f293d',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+      <div className="options-row" style={{
         fontSize: '0.75rem',
         color: '#94a3b8',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Sliders size={13} />
             <span>Test Command:</span>

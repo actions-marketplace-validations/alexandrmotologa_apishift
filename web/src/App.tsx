@@ -204,7 +204,7 @@ export function App() {
               affectedFiles={affectedFiles}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '1.25rem' }}>
+            <div className="studio-grid">
               <DiffViewer
                 files={fileDiffs}
                 selectedFilePaths={selectedFilePaths}
@@ -236,16 +236,7 @@ export function App() {
         )}
       </main>
 
-      <footer style={{
-        borderTop: '1px solid #1f293d',
-        padding: '0.75rem 1.5rem',
-        fontSize: '0.75rem',
-        color: '#64748b',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#0f172a',
-      }}>
+      <footer className="footer-container">
         <div>APIShift v1.1.0 • Autonomous API Migration & AST Refactoring Engine</div>
         <div>Created by Alexandr Motologa • Open Source under MIT License</div>
       </footer>

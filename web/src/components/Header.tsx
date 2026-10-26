@@ -9,15 +9,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isConnected }) => {
   return (
-    <header style={{
-      borderBottom: '1px solid #1f293d',
-      backgroundColor: '#0f172a',
-      padding: '0.75rem 1.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+    <header className="header-container">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             width: '2.25rem',
@@ -43,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isConne
           </div>
         </div>
 
-        <nav style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+        <nav className="header-nav">
           <button
             onClick={() => setActiveTab('studio')}
             style={{
