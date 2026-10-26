@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/alexandrmotologa/apishift/actions"><img src="https://img.shields.io/github/actions/workflow/status/alexandrmotologa/apishift/ci.yml?branch=main&label=CI&logo=github" alt="CI" /></a>
+  <a href="https://github.com/marketplace/actions/apishift-api-auto-migrator"><img src="https://img.shields.io/badge/Marketplace-APIShift-blue?logo=githubactions" alt="GitHub Marketplace" /></a>
   <a href="https://github.com/alexandrmotologa/apishift/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript" alt="TypeScript" /></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19.0-61dafb?logo=react" alt="React 19" /></a>
