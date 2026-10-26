@@ -1,0 +1,28 @@
+{
+  "id": "supabase-v1-to-v2",
+  "name": "Supabase JS Client v1 to v2",
+  "description": "Migrates Supabase JS authentication methods to v2 async contract and method signatures.",
+  "packageName": "@supabase/supabase-js",
+  "fromVersion": "1.35.0",
+  "toVersion": "2.0.0",
+  "transformations": [
+    {
+      "type": "METHOD_RENAME",
+      "from": "supabase.auth.user",
+      "to": "supabase.auth.getUser",
+      "description": "Rename synchronous auth.user() to asynchronous auth.getUser()"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "supabase.auth.session",
+      "to": "supabase.auth.getSession",
+      "description": "Rename synchronous auth.session() to asynchronous auth.getSession()"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "supabase.auth.signIn",
+      "to": "supabase.auth.signInWithPassword",
+      "description": "Rename auth.signIn() to auth.signInWithPassword()"
+    }
+  ]
+}

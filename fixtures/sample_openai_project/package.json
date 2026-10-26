@@ -1,0 +1,12 @@
+{
+  "name": "sample-openai-project",
+  "version": "1.0.0",
+  "description": "Sample application calling OpenAI legacy APIs",
+  "main": "src/ai_service.js",
+  "scripts": {
+    "test": "node --test test.js"
+  },
+  "dependencies": {
+    "openai": "file:./stubs/openai"
+  }
+}

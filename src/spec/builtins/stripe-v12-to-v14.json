@@ -1,0 +1,31 @@
+{
+  "id": "stripe-v12-to-v14",
+  "name": "Stripe Node SDK v12 to v14",
+  "description": "Migrates legacy charges and source APIs to paymentIntents and modern Stripe API parameters.",
+  "packageName": "stripe",
+  "fromVersion": "12.0.0",
+  "toVersion": "14.0.0",
+  "transformations": [
+    {
+      "type": "METHOD_RENAME",
+      "from": "stripe.charges.create",
+      "to": "stripe.paymentIntents.create",
+      "description": "Migrate charges.create to paymentIntents.create"
+    },
+    {
+      "type": "PARAM_RENAME",
+      "method": "stripe.paymentIntents.create",
+      "paramMap": {
+        "destination": "on_behalf_of"
+      },
+      "description": "Remap destination account parameter to on_behalf_of"
+    },
+    {
+      "type": "PARAM_WRAP_OPTIONS",
+      "method": "stripe.paymentIntents.create",
+      "optionsParamIndex": 1,
+      "wrapFields": ["idempotencyKey", "stripeAccount", "apiVersion"],
+      "description": "Wrap request options in secondary options argument"
+    }
+  ]
+}

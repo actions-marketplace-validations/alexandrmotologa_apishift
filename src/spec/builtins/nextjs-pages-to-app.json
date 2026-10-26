@@ -1,0 +1,26 @@
+{
+  "id": "nextjs-pages-to-app",
+  "name": "Next.js Pages Router to App Router",
+  "description": "Migrates Next.js client navigation hooks from next/router to next/navigation.",
+  "packageName": "next",
+  "fromVersion": "12.0.0",
+  "toVersion": "14.0.0",
+  "transformations": [
+    {
+      "type": "IMPORT_RENAME",
+      "sourcePackage": "next/router",
+      "oldImports": ["useRouter"],
+      "newImport": {
+        "isDefault": false,
+        "name": "useRouter"
+      },
+      "description": "Update useRouter import path from next/router to next/navigation"
+    },
+    {
+      "type": "DEPRECATED_WARN",
+      "pattern": "router.query",
+      "message": "router.query is not supported in next/navigation useRouter. Use useSearchParams() from next/navigation instead.",
+      "description": "Flag usage of legacy router.query property"
+    }
+  ]
+}

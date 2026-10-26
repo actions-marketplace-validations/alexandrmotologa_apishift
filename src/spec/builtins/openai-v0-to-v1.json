@@ -1,0 +1,103 @@
+{
+  "id": "openai-v0-to-v1",
+  "name": "OpenAI SDK v0.28 to v1.0",
+  "description": "Migrates OpenAI JavaScript/TypeScript SDK from legacy v0.28 to v1.0 client namespace and direct response shapes.",
+  "packageName": "openai",
+  "fromVersion": "0.28.0",
+  "toVersion": "1.0.0",
+  "transformations": [
+    {
+      "type": "IMPORT_RENAME",
+      "sourcePackage": "openai",
+      "oldImports": ["Configuration", "OpenAIApi"],
+      "newImport": {
+        "isDefault": false,
+        "name": "OpenAI"
+      },
+      "description": "Replace Configuration and OpenAIApi imports with unified OpenAI class"
+    },
+    {
+      "type": "CLASS_INSTANTIATION_RENAME",
+      "oldClass": "Configuration",
+      "newClass": "Object",
+      "unwrapToArgument": true,
+      "description": "Unwrap new Configuration(options) to plain options object"
+    },
+    {
+      "type": "CLASS_INSTANTIATION_RENAME",
+      "oldClass": "OpenAIApi",
+      "newClass": "OpenAI",
+      "simplifyConstructorArg": true,
+      "description": "Replace new OpenAIApi(new Configuration({ apiKey })) with new OpenAI({ apiKey })"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.ChatCompletion.create",
+      "to": "openai.chat.completions.create",
+      "description": "Rename ChatCompletion.create to chat.completions.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.createChatCompletion",
+      "to": "openai.chat.completions.create",
+      "description": "Rename createChatCompletion to chat.completions.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.Completion.create",
+      "to": "openai.completions.create",
+      "description": "Rename Completion.create to completions.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.createCompletion",
+      "to": "openai.completions.create",
+      "description": "Rename createCompletion to completions.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.Embedding.create",
+      "to": "openai.embeddings.create",
+      "description": "Rename Embedding.create to embeddings.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.createEmbedding",
+      "to": "openai.embeddings.create",
+      "description": "Rename createEmbedding to embeddings.create"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.Image.create",
+      "to": "openai.images.generate",
+      "description": "Rename Image.create to images.generate"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "openai.createImage",
+      "to": "openai.images.generate",
+      "description": "Rename createImage to images.generate"
+    },
+    {
+      "type": "PARAM_RENAME",
+      "method": "openai.chat.completions.create",
+      "paramMap": {
+        "model_name": "model",
+        "max_tokens_to_sample": "max_tokens"
+      },
+      "description": "Map legacy model_name and token parameters"
+    },
+    {
+      "type": "RETURN_VALUE_ACCESS_TRANSFORM",
+      "targetCall": "openai.chat.completions.create",
+      "stripPropertyPrefix": "data",
+      "description": "Remove .data wrapper on response objects"
+    },
+    {
+      "type": "RETURN_VALUE_ACCESS_TRANSFORM",
+      "targetCall": "openai.completions.create",
+      "stripPropertyPrefix": "data",
+      "description": "Remove .data wrapper on completion response objects"
+    }
+  ]
+}

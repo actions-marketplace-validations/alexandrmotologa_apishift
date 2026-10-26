@@ -1,25 +1,20 @@
 # APIShift: Master Implementation Plan
 
-> **Agentic API-to-Codebase Auto-Migrator & Breaking Change Healing Engine (YC RFS)**
->
-> *Autonomous developer agent and AST refactoring engine solving Y Combinator's official Request for Startups. Ingests API breaking change specifications and SDK migration guides, scans repository Abstract Syntax Trees (ASTs), synthesizes type-safe code transformations, runs local test suites in Docker, and iteratively auto-heals regressions until 100% of tests pass.*
+Autonomous API migration and breaking change healing engine. Ingests API breaking change specifications and SDK migration guides, scans repository Abstract Syntax Trees (ASTs), synthesizes type-safe code transformations, runs local test suites in isolated sandboxes, and iteratively heals regressions until 100% of tests pass.
 
 ---
 
-## 1. Project Overview & Architecture
+## 1. Project overview and architecture
 
-Software development is plagued by API and SDK deprecations. When major platforms (Stripe, OpenAI, Supabase, Twilio, AWS) release breaking changes (e.g. OpenAI v0.28 -> v1.0, Stripe v12 -> v14, or Next.js Pages -> App Router), engineering teams face severe friction:
-1. **Prolonged Upgrade Paralysis**: Companies delay critical SDK upgrades for 6–12 months because manual refactoring across hundreds of files carries high regression risks.
-2. **Platform Provider Burden**: API platforms spend millions of dollars maintaining legacy API endpoints and backwards-compatibility layers because customers refuse to upgrade.
-3. **Naive AI Limitations**: Passing an entire repository to standard chat models generates incomplete code, hallucinates parameter names, and introduces subtle runtime bugs.
-4. **Lack of Automated Verification**: Code transformations must be strictly verified against the project's actual unit and integration test suites before any pull request is opened.
+Software teams frequently face breaking changes in third-party APIs and SDKs (such as OpenAI v0.28 to v1.0, Stripe v12 to v14, or Next.js router migrations). Manual refactoring across hundreds of files introduces high regression risks, and naive code generation models often alter unrelated code or generate invalid parameter names.
 
-**APIShift** automates the entire migration lifecycle end-to-end:
-- **Migration Spec Ingestion**: Ingests OpenAPI diffs, JSON migration recipes, or deprecation markdown documents (mapping old method signatures, renamed parameters, and altered payload shapes).
-- **AST Codebase Scanner**: Analyzes target repositories (TypeScript, Python, Go) using Babel/Recast to map every import statement, callsite, and interface contract.
-- **Semantic Patch Synthesizer**: Generates exact, style-preserving AST transformations that retain all user code comments, indentation, and structure.
-- **Docker-Sandboxed Test-Driven Healing Loop**: Executes the repository's test suite (`npm test`, `pytest`, `go test`) inside an isolated local Docker container. Catches compiler errors and failed assertions, feeding them back to the LLM agent to iteratively heal regressions until all tests pass.
-- **Automated GitHub Pull Request Generator**: Creates a dedicated git branch with atomic commits and opens a comprehensive PR complete with before/after diffs and green test execution proofs.
+APIShift provides an automated migration pipeline:
+1. Migration specification ingestion: parses OpenAPI diffs, declarative JSON migration recipes, or deprecation manifests.
+2. AST codebase scanner: analyzes TypeScript, JavaScript, and Python codebases using Babel and Recast to map every import statement, callsite, and interface contract.
+3. Semantic patch synthesizer: applies style-preserving AST transformations that keep user comments, indentation, and structure intact.
+4. Isolated test-driven healing loop: executes the repository test suite in an isolated sandbox (Docker container when available, or isolated worker sandbox with process isolation). Parses compiler and runtime errors, feeding them back to the patch synthesizer until all tests pass.
+5. GitHub pull request generator: creates dedicated feature branches, generates conventional commits, and opens pull requests with before and after diffs and test logs.
+6. Web review studio: React 19 interface displaying live migration progress, side-by-side diffs, test logs, and pull request previews.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -30,7 +25,7 @@ Software development is plagued by API and SDK deprecations. When major platform
         |                                                                   |
 +-------v-------------------------+                 +-----------------------v-------+
 |    Migration Spec Ingestor      |                 |      AST Codebase Scanner     |
-|  * OpenAPI Diff / JSON Recipe   |                 |  * TypeScript, Python, Go AST |
+|  * OpenAPI Diff / JSON Recipe   |                 |  * TypeScript/JavaScript AST  |
 |  * Renamed Methods & Params     |                 |  * Callsite & Import Mapper   |
 |  * Schema Type Transformations  |                 |  * Call Graph Resolution      |
 +-------+-------------------------+                 +-----------------------+-------+
@@ -41,14 +36,14 @@ Software development is plagued by API and SDK deprecations. When major platform
                         |   Semantic Patch Synthesizer      |
                         |  * AST Transformation (Recast)    |
                         |  * Preserves Comments & Style     |
-                        |  * Context-Aware LLM Reasoning    |
+                        |  * Targeted Code Synthesis        |
                         +-----------------+-----------------+
-                                          |
+                        |
                         +-----------------v-----------------+
-                        |   Docker Test-Driven Healer Loop  |
-                        |  * Runs Local Test Suite in Docker|
-                        |  * Captures Stack Traces & Errors |
-                        |  * Iterative Self-Healing Agent   |
+                        |    Sandboxed Test-Driven Healer   |
+                        |  * Docker / Isolated Process      |
+                        |  * Error & Stack Trace Parser     |
+                        |  * Iterative Self-Healing Loop    |
                         +-----------------+-----------------+
                                           |
                         +-----------------v-----------------+
@@ -61,53 +56,73 @@ Software development is plagued by API and SDK deprecations. When major platform
 
 ---
 
-## 2. Directory Structure
+## 2. Directory structure
 
 ```
 apishift/
 ├── src/
 │   ├── spec/
-│   │   ├── ingestor.ts           # Parses OpenAPI diffs & JSON migration recipes
-│   │   ├── rules.ts              # Transformation rules: rename, reorder, type-cast
-│   │   └── builtins/             # Pre-packaged recipes (OpenAI v1, Stripe v14, Next.js)
+│   │   ├── types.ts              # Migration recipe and rule schema types
+│   │   ├── ingestor.ts           # Parses JSON migration recipes and OpenAPI diffs
+│   │   ├── openapi_differ.ts     # Computes breaking change diffs between two OpenAPI specs
+│   │   └── builtins/             # Pre-packaged recipes (OpenAI v1, Stripe v14, Supabase v2, Next.js)
 │   ├── scanner/
 │   │   ├── ast_walker.ts         # Babel / Recast AST visitor for TS/JS
-│   │   ├── python_scanner.ts     # Python AST caller locator
-│   │   └── call_graph.ts         # Resolves imported functions to call sites
+│   │   ├── import_resolver.ts    # Resolves library imports, namespaces, and aliases
+│   │   └── call_graph.ts         # Maps resolved call sites across repository files
 │   ├── synthesizer/
-│   │   ├── ast_mutator.ts        # Rewrites AST nodes preserving comments
-│   │   ├── prompt_builder.ts     # Constructs targeted LLM prompts for ambiguous logic
-│   │   └── patch_generator.ts    # Computes unified git diffs
+│   │   ├── ast_mutator.ts        # Rewrites AST nodes preserving comments and formatting
+│   │   ├── transformer_rules.ts  # Rule executors for rename, param remap, option wrapping
+│   │   ├── patch_generator.ts    # Computes unified git diffs and patch statistics
+│   │   └── repair_prompts.ts     # Generates targeted repair strategies for test failures
 │   ├── sandbox/
-│   │   ├── docker_runner.ts      # Spawns isolated container with repo volume
-│   │   ├── test_executor.ts      # Runs npm test / pytest / go test
-│   │   └── error_parser.ts       # Parses compiler errors and test assertion failures
+│   │   ├── types.ts              # Sandbox executor interfaces and execution result types
+│   │   ├── docker_runner.ts      # Dockerode container sandbox runner
+│   │   ├── local_runner.ts       # Isolated staging sandbox runner for local environments
+│   │   ├── runner_factory.ts     # Detects environment and instantiates appropriate runner
+│   │   └── error_parser.ts       # Parses compiler, assertion, and runtime error messages
 │   ├── agent/
-│   │   ├── loop.ts               # Iterative heal loop: Run -> Fail -> Fix -> Retry
-│   │   └── memory.ts             # Tracks attempts and avoids cyclic regressions
+│   │   ├── loop.ts               # Iterative heal loop: Run -> Fail -> Analyze -> Mutate -> Retry
+│   │   └── memory.ts             # Tracks attempts and prevents cyclic mutations
 │   ├── git/
-│   │   ├── branch_manager.ts     # Creates feature branch (e.g. migrate/stripe-v14)
-│   │   └── pr_publisher.ts       # Octokit integration to open GitHub PR
+│   │   ├── branch_manager.ts     # Git branch and commit automation
+│   │   └── pr_publisher.ts       # Octokit and GitHub CLI pull request generator
 │   ├── server/
-│   │   ├── api.ts                # Fastify backend for web UI
-│   │   └── sse.ts                # Live migration progress streaming
+│   │   ├── api.ts                # Fastify backend routes for web UI
+│   │   ├── sse.ts                # Server-Sent Events stream for live execution logs
+│   │   └── static.ts             # Static file server for built React frontend
 │   └── cli.ts                    # Commander CLI entrypoint
 ├── web/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── MigrationProgress.tsx # Live step visualizer (Scan -> Patch -> Test)
-│   │   │   ├── DiffViewer.tsx        # Side-by-side file changes
-│   │   │   ├── TestOutputConsole.tsx # Streaming test execution logs
-│   │   │   └── PrPreviewModal.tsx    # Formatted GitHub PR description preview
+│   │   │   ├── Header.tsx            # Navigation and status header
+│   │   │   ├── RecipeSelector.tsx    # Migration recipe picker and JSON editor
+│   │   │   ├── MigrationProgress.tsx # Live pipeline progress indicator
+│   │   │   ├── DiffViewer.tsx        # Side by side code diff viewer
+│   │   │   ├── TestConsole.tsx       # Live test execution console
+│   │   │   └── PrPreviewModal.tsx    # GitHub Pull Request preview dialog
 │   │   ├── hooks/
-│   │   │   └── useMigrationStream.ts
-│   │   ├── App.tsx
-│   │   └── main.tsx
+│   │   │   └── useMigrationStream.ts # SSE hook for streaming updates
+│   │   ├── App.tsx                   # Main studio application view
+│   │   ├── main.tsx                  # React 19 mount entrypoint
+│   │   └── index.css                 # Clean CSS tokens and layout styles
 │   ├── package.json
-│   └── vite.config.ts
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── index.html
+├── fixtures/                         # Real test repositories for verification
+│   ├── sample_openai_project/        # Real project with v0.28 calls and test suite
+│   └── sample_stripe_project/        # Real project with v12 calls and test suite
 ├── tests/
-│   ├── ast_walker.test.ts
-│   └── spec_ingestor.test.ts
+│   ├── spec_ingestor.test.ts         # Ingestor and OpenAPI differ tests
+│   ├── ast_walker.test.ts            # Call site and import scanner tests
+│   ├── ast_mutator.test.ts           # Style preserving Recast mutation tests
+│   ├── error_parser.test.ts          # Test failure and compiler error parser tests
+│   └── healing_loop.test.ts          # Full end to end migration and self-healing tests
+├── docs/
+│   ├── ARCHITECTURE.md               # Technical architecture document
+│   ├── RECIPES.md                    # Migration recipe reference
+│   └── images/                       # UI screenshots and animated demo GIF
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -115,79 +130,91 @@ apishift/
 
 ---
 
-## 3. Implementation Roadmap
+## 3. Implementation roadmap
 
-### Phase 1: Migration Recipe Specification & OpenAPI Ingestion
-- Implement `src/spec/ingestor.ts`:
-  - Define declarative migration schema:
-    ```json
-    {
-      "packageName": "openai",
-      "fromVersion": "0.28.0",
-      "toVersion": "1.0.0",
-      "transformations": [
-        {
-          "type": "METHOD_RENAME",
-          "from": "openai.ChatCompletion.create",
-          "to": "openai.chat.completions.create"
-        },
-        {
-          "type": "PARAM_RENAME",
-          "method": "openai.chat.completions.create",
-          "paramMap": { "model_name": "model" }
-        }
-      ]
-    }
-    ```
-  - Ingest OpenAPI v2 vs v3 diffs to automatically extract changed endpoints and altered parameter names.
+### Phase 1: Core setup and recipe ingestion
+- Initialize root `package.json` with TypeScript configuration and dependencies:
+  - `recast`, `@babel/parser`, `@babel/traverse`, `@babel/types`, `dockerode`, `commander`, `fastify`, `@fastify/cors`, `@fastify/static`, `diff`, `octokit`.
+- Implement `src/spec/types.ts` defining migration recipe schema:
+  - `PackageTarget`: package name, source version, target version.
+  - `TransformationRule`: method renames, parameter remapping, import specifier updates, options object wrapping, deprecation removals.
+- Implement `src/spec/ingestor.ts`: loads JSON and YAML migration manifests with validation.
+- Implement `src/spec/openapi_differ.ts`: extracts route renames, parameter alterations, and schema property renames between two OpenAPI JSON/YAML specifications.
+- Implement pre-packaged built-in recipes in `src/spec/builtins/`:
+  - `openai-v0-to-v1.json`
+  - `stripe-v12-to-v14.json`
+  - `supabase-v1-to-v2.json`
+  - `nextjs-pages-to-app.json`
 
-### Phase 2: AST Analysis & Precision Callsite Mapping
-- Implement `src/scanner/ast_walker.ts` using `@babel/parser` and `@babel/traverse`:
-  - Trace `import` statements to determine variable aliases (e.g. `import OpenAI from 'openai'`, `import { Configuration } from 'openai'`).
-  - Traverse all AST CallExpressions and MemberExpressions matching target API signatures.
-  - Record exact file paths, line numbers, and parameter AST nodes.
+### Phase 2: AST codebase scanner and import resolver
+- Implement `src/scanner/import_resolver.ts`:
+  - Tracks default imports, named imports, namespace imports, and CommonJS `require` statements.
+  - Maps local alias names to original package exports (e.g. `import { Configuration as Cfg } from 'openai'`).
+- Implement `src/scanner/ast_walker.ts`:
+  - Walks AST using `@babel/parser` and Babel traversal.
+  - Finds all `CallExpression`, `MemberExpression`, `NewExpression`, and `TSInterfaceDeclaration` references tied to target packages.
+  - Records source file, line number, column range, and arguments.
+- Implement `src/scanner/call_graph.ts`:
+  - Scans entire repository directory tree, filtering node_modules, build, and dist folders.
+  - Aggregates call sites per file and computes dependency order.
 
-### Phase 3: Semantic Patch Synthesis (Recast AST + LLM)
-- Implement `src/synthesizer/ast_mutator.ts` using `recast`:
-  - Perform mechanical transformations directly on the AST: renaming methods, wrapping arguments in updated options objects, and updating import paths.
-  - Guarantee zero modification to unrelated lines, preserving user comments, spacing, and formatting.
-- Implement `src/synthesizer/prompt_builder.ts`:
-  - For non-trivial logic changes (e.g. asynchronous promise shifts or streaming response handling), isolate the single function AST snippet and prompt the LLM to rewrite only that function.
+### Phase 3: Semantic patch synthesizer
+- Implement `src/synthesizer/ast_mutator.ts`:
+  - Uses `recast` to parse and reprint code, preserving original comments, quotes, indentation, and formatting.
+  - Rewrites method chains (e.g. `openai.ChatCompletion.create` -> `openai.chat.completions.create`).
+  - Rewrites argument dictionaries (e.g. renaming `model_name` key to `model`).
+  - Updates import statements to new package contracts.
+- Implement `src/synthesizer/patch_generator.ts`:
+  - Generates standard unified diffs for previewing and staging changes.
+  - Calculates file modification counts and callsite statistics.
 
-### Phase 4: Docker-Sandboxed Test-Driven Healing Loop
-- Implement `src/sandbox/docker_runner.ts` using `dockerode`:
-  - Mount repository clone into a sandboxed container matching the project's runtime (Node.js, Python, or Go).
+### Phase 4: Sandboxed test-driven self-healing engine
+- Implement `src/sandbox/docker_runner.ts`:
+  - Manages Docker containers via `dockerode`, mounting workspace volumes.
+- Implement `src/sandbox/local_runner.ts`:
+  - Provides isolated workspace staging in temporary working trees with timeout protection, environment isolation, and clean tear-down.
+- Implement `src/sandbox/runner_factory.ts`:
+  - Automatically selects Docker if available, falling back to isolated local staging runner.
+- Implement `src/sandbox/error_parser.ts`:
+  - Extracts error stacks, failed test names, line numbers, and error codes (TypeScript compiler errors, Jest/Vitest assertions, Mocha, Node test runner).
 - Implement `src/agent/loop.ts`:
-  - Step 1: Run project's existing test command (`npm test`, `pytest`).
-  - Step 2: If tests fail, parse stdout/stderr for exact error messages, file names, and line numbers.
-  - Step 3: Dispatch context to LLM: *"The previous patch caused test 'should stream tokens' to fail with error: TypeError: response.on is not a function. Fix this function."*
-  - Step 4: Apply fix and re-run tests. Maximum 5 iterations until all tests pass.
+  - Runs baseline test suite to verify starting state.
+  - Applies initial AST transformations.
+  - Re-executes test suite.
+  - On test failure, analyzes failure signatures, applies targeted AST or heuristic fixes, and retries.
+  - Halts with success once 100% of tests pass, or logs detailed diagnostics.
+- Implement `src/agent/memory.ts`:
+  - Prevents cyclic modifications and records tried mutation strategies.
 
-### Phase 5: Web Studio, GitHub PR Generator & CLI
-- Build modern React 19 interface in `web/`:
-  - **Migration Progress Bar**: Real-time progress showing scanned files, modified callsites, and test suite status.
-  - **Side-by-Side Diff Viewer**: Monaco-style diff of every changed file.
-  - **PR Preview Panel**: Summary of changed files, test coverage confirmation, and breaking change mapping.
-- Implement CLI commands:
-  - `npx apishift scan --repo ./project --recipe openai-v1`: Lists all callsites needing migration.
-  - `npx apishift migrate --repo ./project --recipe openai-v1 --auto-pr`: Runs full pipeline, heals tests, and opens PR.
+### Phase 5: Git automation and GitHub PR publisher
+- Implement `src/git/branch_manager.ts`:
+  - Creates clean migration branch (`migrate/<package>-to-<version>`).
+  - Stages modified files and creates conventional commits.
+- Implement `src/git/pr_publisher.ts`:
+  - Opens pull request via GitHub API or `gh` CLI.
+  - Generates clear pull request description with migration summary, changed call sites, and test verification report.
 
----
+### Phase 6: React 19 web review studio and Fastify API
+- Set up Fastify backend in `src/server/api.ts` with SSE streaming (`src/server/sse.ts`).
+- Build React 19 UI in `web/`:
+  - Header with project status and active repository path.
+  - Recipe selector with built-in recipes and custom JSON editor.
+  - Migration progress visualizer showing real-time stage progression.
+  - Side-by-side diff viewer with syntax highlighting and file tree.
+  - Live test console streaming container test execution logs.
+  - PR preview dialog with branch details and submit trigger.
 
-## 4. Agent Kickoff Prompt
-
-```markdown
-You are implementing **APIShift**, an agentic API-to-codebase auto-migrator and breaking change healing engine in Node.js 22 + TypeScript + React 19.
-
-### Execution Plan:
-1. Initialize the project in `B:\workgit\apishift` with root `package.json`, TypeScript configuration, and dependencies (`recast`, `@babel/parser`, `@babel/traverse`, `dockerode`, `commander`, `fastify`).
-2. Implement `src/spec/ingestor.ts` to parse declarative migration recipes and OpenAPI diffs.
-3. Implement `src/scanner/ast_walker.ts` to scan TypeScript/JavaScript files and locate all callsites, imports, and method invocations for target libraries.
-4. Implement `src/synthesizer/ast_mutator.ts` using Recast to rewrite AST nodes while preserving existing formatting and comments.
-5. Implement `src/sandbox/` and `src/agent/loop.ts` to execute test suites in isolated Docker containers and iteratively heal test regressions.
-6. Implement `src/git/` to create git branches and open verified GitHub Pull Requests.
-7. Build the modern React 19 web studio in `web/` featuring the Migration Progress Visualizer, Side-by-Side Diff Viewer, and Test Console.
-8. Implement the CLI in `src/cli.ts` supporting `scan`, `migrate`, and `serve --port 9220`.
-
-Maintain 100% production code without mocks, placeholders, or empty handlers.
-```
+### Phase 7: CLI and end-to-end verification
+- Implement CLI in `src/cli.ts`:
+  - `apishift scan --repo <path> --recipe <name_or_path>`
+  - `apishift migrate --repo <path> --recipe <name_or_path> [--sandbox <mode>] [--auto-pr]`
+  - `apishift diff --spec-old <file> --spec-new <file> [--out <file>]`
+  - `apishift serve --port 9220`
+- Construct real sample project fixtures:
+  - `fixtures/sample_openai_project`: contains v0.28 OpenAI SDK calls and a real test suite.
+- Write automated tests:
+  - Spec ingestion and OpenAPI diffing.
+  - AST scanning and identifier resolution.
+  - Style-preserving Recast mutations.
+  - Error parsing across test runner formats.
+  - End-to-end migration and healing verification.
