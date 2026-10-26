@@ -139,6 +139,8 @@ jobs:
 | `stripe-v12-to-v14` | `stripe` | `12.0.0` → `14.0.0` | Migrates `charges.create` to `paymentIntents.create`, remaps `destination` to `on_behalf_of`, and wraps options into secondary parameters. |
 | `supabase-v1-to-v2` | `@supabase/supabase-js` | `1.35.0` → `2.0.0` | Migrates synchronous `auth.user()` and `auth.session()` calls to asynchronous `auth.getUser()` and `auth.getSession()`. |
 | `nextjs-pages-to-app` | `next` | `12.0.0` → `14.0.0` | Updates `useRouter` import path from `next/router` to `next/navigation` and flags legacy query parameters. |
+| `aws-sdk-v2-to-v3` | `aws-sdk` | `2.1000.0` → `3.0.0` | Migrates AWS SDK v2 monolithic client usage to modular AWS SDK v3 client packages (`@aws-sdk/client-s3`) and command executions. |
+| `langchain-v0-to-v1` | `langchain` | `0.1.0` → `0.2.0` | Migrates legacy monolithic LangChain imports to modular `@langchain/openai` and `@langchain/core` packages. |
 
 ---
 
@@ -156,7 +158,7 @@ apishift/
 │   ├── server/          # Fastify backend and Server-Sent Events stream
 │   └── cli.ts           # Commander CLI entrypoint
 ├── web/                 # React 19 web review studio (Vite, TypeScript, CSS)
-├── fixtures/            # Real sample project fixtures for verification
+├── fixtures/            # Real sample project fixtures for verification (Node.js & Python)
 ├── action.yml           # Reusable GitHub Action specification
 └── tests/               # Vitest unit and integration test suite
 ```
@@ -172,19 +174,20 @@ npm test
 
 Expected output:
 ```text
- ✓ tests/error_parser.test.ts (2 tests)
+ ✓ tests/snapshot.test.ts (1 test)
  ✓ tests/manifest_updater.test.ts (2 tests)
- ✓ tests/openapi_differ.test.ts (1 test)
  ✓ tests/spec_ingestor.test.ts (3 tests)
  ✓ tests/report_generator.test.ts (1 test)
- ✓ tests/snapshot.test.ts (1 test)
- ✓ tests/python_scanner.test.ts (1 test)
  ✓ tests/ast_walker.test.ts (1 test)
  ✓ tests/ast_mutator.test.ts (1 test)
+ ✓ tests/error_parser.test.ts (2 tests)
+ ✓ tests/python_scanner.test.ts (1 test)
+ ✓ tests/openapi_differ.test.ts (1 test)
+ ✓ tests/python_fixture_migration.test.ts (1 test)
  ✓ tests/healing_loop.test.ts (1 test)
 
- Test Files  10 passed (10)
-      Tests  14 passed (14)
+ Test Files  11 passed (11)
+      Tests  15 passed (15)
 ```
 
 ---

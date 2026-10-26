@@ -1,0 +1,42 @@
+{
+  "id": "langchain-v0-to-v1",
+  "name": "LangChain v0.1 to v0.2 Modular Architecture",
+  "description": "Migrates legacy monolithic LangChain imports to modular @langchain/openai and @langchain/core packages.",
+  "packageName": "langchain",
+  "fromVersion": "0.1.0",
+  "toVersion": "0.2.0",
+  "transformations": [
+    {
+      "type": "IMPORT_RENAME",
+      "sourcePackage": "langchain/chat_models/openai",
+      "oldImports": ["ChatOpenAI"],
+      "newImport": {
+        "isDefault": false,
+        "name": "ChatOpenAI"
+      },
+      "description": "Migrate ChatOpenAI to @langchain/openai package"
+    },
+    {
+      "type": "IMPORT_RENAME",
+      "sourcePackage": "langchain/prompts",
+      "oldImports": ["PromptTemplate", "ChatPromptTemplate"],
+      "newImport": {
+        "isDefault": false,
+        "name": "ChatPromptTemplate"
+      },
+      "description": "Migrate prompt templates to @langchain/core/prompts"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "chat.predict",
+      "to": "chat.invoke",
+      "description": "Rename legacy predict() call to standardized Runnable invoke() interface"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "chain.run",
+      "to": "chain.invoke",
+      "description": "Replace legacy chain.run() calls with LCEL invoke()"
+    }
+  ]
+}

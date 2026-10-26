@@ -1,0 +1,41 @@
+{
+  "id": "aws-sdk-v2-to-v3",
+  "name": "AWS SDK JS v2 to v3",
+  "description": "Migrates AWS SDK v2 monolithic client usage to modular AWS SDK v3 client packages and command executions.",
+  "packageName": "aws-sdk",
+  "fromVersion": "2.1000.0",
+  "toVersion": "3.0.0",
+  "transformations": [
+    {
+      "type": "IMPORT_RENAME",
+      "sourcePackage": "aws-sdk",
+      "oldImports": ["S3"],
+      "newImport": {
+        "isDefault": false,
+        "name": "S3Client"
+      },
+      "description": "Replace AWS.S3 or { S3 } import with modular @aws-sdk/client-s3 S3Client"
+    },
+    {
+      "type": "CLASS_INSTANTIATION_RENAME",
+      "oldClass": "S3",
+      "newClass": "S3Client",
+      "description": "Replace new AWS.S3() with new S3Client()"
+    },
+    {
+      "type": "METHOD_RENAME",
+      "from": "s3.listObjectsV2",
+      "to": "s3.send",
+      "description": "Migrate direct s3.listObjectsV2 calls to s3.send with command objects"
+    },
+    {
+      "type": "PARAM_RENAME",
+      "method": "s3.send",
+      "paramMap": {
+        "Bucket": "Bucket",
+        "Prefix": "Prefix"
+      },
+      "description": "Retain key S3 parameter definitions"
+    }
+  ]
+}
